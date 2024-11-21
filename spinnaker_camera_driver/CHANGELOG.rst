@@ -2,8 +2,8 @@
 Changelog for package spinnaker_camera_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2024-11-21)
+------------------
 * Remove "NOT TESTED" from tested Chameleon params
   - Tested with `CM3-U3-50S5C` camera model, `trigger_source: "Line0"`
   and `trigger_selector: "FrameStart"`

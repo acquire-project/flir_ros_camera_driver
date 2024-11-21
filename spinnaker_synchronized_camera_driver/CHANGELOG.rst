@@ -2,8 +2,8 @@
 Changelog for package spinnaker_synchronized_camera_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2024-11-21)
+------------------
 * added primary_secondary launch file
 * updated docs for sync driver, switch to RST
 * added follower exposure controller renamed individual -> master
