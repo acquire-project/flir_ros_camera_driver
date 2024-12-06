@@ -20,11 +20,13 @@
 #include <deque>
 #include <flir_camera_msgs/msg/camera_control.hpp>
 #include <flir_camera_msgs/msg/image_meta_data.hpp>
+#include <flir_camera_msgs/action/acquire_multi_frame.hpp>
 #include <image_transport/image_transport.hpp>
 #include <limits>
 #include <map>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <spinnaker_camera_driver/image.hpp>
@@ -40,6 +42,8 @@ class Camera
 {
 public:
   using ImageConstPtr = spinnaker_camera_driver::ImageConstPtr;
+  using AcquireMultiFrame = flir_camera_msgs::action::AcquireMultiFrame;
+  using GoalHandleAcquireMultiFrame = rclcpp_action::ServerGoalHandle<AcquireMultiFrame>;
   explicit Camera(
     rclcpp::Node * node, image_transport::ImageTransport * it, const std::string & prefix,
     bool useStatus = true);
@@ -88,6 +92,7 @@ private:
   void printStatus();
   void checkSubscriptions();
   void doPublish(const ImageConstPtr & im);
+  
   rclcpp::Logger get_logger()
   {
     return rclcpp::get_logger(
@@ -121,6 +126,12 @@ private:
     }
   }
 
+  rclcpp_action::GoalResponse handle_multi_frame_goal(
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const AcquireMultiFrame::Goal> goal);
+  rclcpp_action::CancelResponse handle_multi_frame_cancel(
+    const std::shared_ptr<GoalHandleAcquireMultiFrame> goal_handle);
+  void handle_multi_frame_accepted(const std::shared_ptr<GoalHandleAcquireMultiFrame> goal_handle);
+  
   // ----- variables --
   std::string prefix_;
   std::string topicPrefix_;
@@ -128,6 +139,8 @@ private:
   image_transport::ImageTransport * imageTransport_;
   image_transport::CameraPublisher pub_;
   rclcpp::Publisher<flir_camera_msgs::msg::ImageMetaData>::SharedPtr metaPub_;
+  rclcpp_action::Server<AcquireMultiFrame>::SharedPtr actionServer_;
+  std::shared_ptr<GoalHandleAcquireMultiFrame> currentGoalHandle_;
   std::string serial_;
   std::string name_;
   std::string cameraInfoURL_;
@@ -167,6 +180,7 @@ private:
   std::vector<std::string> parameterList_;  // remember original ordering
   rclcpp::Subscription<flir_camera_msgs::msg::CameraControl>::SharedPtr controlSub_;
   uint32_t publishedCount_{0};
+  uint32_t muiltframeCount_{0};
   uint32_t droppedCount_{0};
   uint32_t queuedCount_{0};
   rclcpp::Time lastStatusTime_;

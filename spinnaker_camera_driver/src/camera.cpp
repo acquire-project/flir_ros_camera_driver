@@ -627,6 +627,10 @@ void Camera::doPublish(const ImageConstPtr & im)
       // const auto t1 = node_->now();
       // std::cout << "dt: " << (t1 - t0).nanoseconds() * 1e-9 << std::endl;
       publishedCount_++;
+      muiltframeCount_++;
+      auto feedback = std::make_shared<AcquireMultiFrame::Feedback>();
+      feedback->current_frame = muiltframeCount_;
+      currentGoalHandle_->publish_feedback(feedback);
     }
   }
   if (metaPub_->get_subscription_count() != 0) {
@@ -637,6 +641,11 @@ void Camera::doPublish(const ImageConstPtr & im)
     metaMsg_.gain = im->gain_;
     metaMsg_.camera_time = im->imageTime_;
     metaPub_->publish(metaMsg_);
+  }
+  
+  if(muiltframeCount_ >= currentGoalHandle_->get_goal()->num_frames){
+    stopCamera();
+    currentGoalHandle_->succeed(std::make_shared<AcquireMultiFrame::Result>());
   }
 }
 
@@ -688,6 +697,14 @@ bool Camera::start()
   cameraInfoMsg_.header.frame_id = frameId_;
   metaMsg_.header.frame_id = frameId_;
 
+  using namespace std::placeholders;
+  actionServer_ = rclcpp_action::create_server<flir_camera_msgs::action::AcquireMultiFrame>(
+      node_,
+      "acquire_multi_frame",
+      std::bind(&Camera::handle_multi_frame_goal, this, _1, _2),
+      std::bind(&Camera::handle_multi_frame_cancel, this, _1),
+      std::bind(&Camera::handle_multi_frame_accepted, this, _1));
+
   pub_ = imageTransport_->advertiseCamera("~/" + topicPrefix_ + "image_raw", qosDepth_);
 
   wrapper_ = std::make_shared<spinnaker_camera_driver::SpinnakerWrapper>();
@@ -729,6 +746,8 @@ bool Camera::start()
     // Some parameters (like blackfly s chunk control) cannot be set once
     // the camera is running.
     createCameraParameters();
+
+    /*
     if (!connectWhileSubscribed_) {
       startCamera();
     } else {
@@ -736,9 +755,40 @@ bool Camera::start()
         node_, node_->get_clock(), rclcpp::Duration(1, 0),
         std::bind(&Camera::checkSubscriptions, this));
     }
+    */
   } else {
     LOG_ERROR("init camera failed for cam: " << serial_);
   }
   return (true);
 }
+
+rclcpp_action::GoalResponse Camera::handle_multi_frame_goal(
+  const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const AcquireMultiFrame::Goal> goal)
+{
+  //RCLCPP_INFO(rclcpp::get_logger("server"), "Got goal request with order %d", goal->order);
+  (void)uuid;
+  // Let's reject sequences that are over 9000
+  if (false) {
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse Camera::handle_multi_frame_cancel(
+  const std::shared_ptr<GoalHandleAcquireMultiFrame> goal_handle)
+{
+  RCLCPP_INFO(rclcpp::get_logger("server"), "Got request to cancel goal");
+  (void)goal_handle;
+
+  stopCamera();
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void Camera::handle_multi_frame_accepted(const std::shared_ptr<GoalHandleAcquireMultiFrame> goal_handle)
+{
+  currentGoalHandle_ = goal_handle;
+  muiltframeCount_ = 0;
+  startCamera();
+}
+
 }  // namespace spinnaker_camera_driver

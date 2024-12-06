@@ -72,6 +72,7 @@ include_directories(SYSTEM
 
 set(ROS_DEPENDENCIES
   "rclcpp"
+  "rclcpp_action"
   "rclcpp_components"
   "sensor_msgs"
   "std_msgs"

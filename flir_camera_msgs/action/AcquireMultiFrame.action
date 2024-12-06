@@ -1,0 +1,4 @@
+uint16 num_frames
+---
+---
+uint16 current_frame

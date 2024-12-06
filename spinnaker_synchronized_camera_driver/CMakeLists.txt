@@ -39,6 +39,7 @@ find_package(spinnaker_camera_driver REQUIRED)
 
 set(ROS_DEPENDENCIES
   "rclcpp"
+  "rclcpp_action"
   "rclcpp_components")
 
 # find dependencies

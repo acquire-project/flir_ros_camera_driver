@@ -27,6 +27,7 @@ rosidl_generate_interfaces(
   ${PROJECT_NAME}
   msg/ImageMetaData.msg
   msg/CameraControl.msg
+  action/AcquireMultiFrame.action
   DEPENDENCIES builtin_interfaces std_msgs
   ADD_LINTER_TESTS)
 
